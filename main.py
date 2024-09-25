@@ -118,7 +118,7 @@ def main():
         DEBUG_MODE = True
     if args.repo:
         print_results(analyze_repo(args.repo))  
-    elif args.repo:
+    elif args.dir:
         print_results(analyze_directory(args.dir))  
     else:
         parser.print_help()
