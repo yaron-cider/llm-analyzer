@@ -1,0 +1,54 @@
+{
+    "Pipeline Operations": {
+        "aiplatform.PipelineJob": "Creates and runs a pipeline job.",
+        "aiplatform.PipelineJob.submit": "Submits a pipeline job for execution.",
+        "aiplatform.PipelineJob.cancel": "Cancels an ongoing pipeline job.",
+        "aiplatform.PipelineJob.wait_for_completion": "Waits for a pipeline job to complete."
+    },
+    "Model Operations": {
+        "aiplatform.Model.upload": "Uploads a machine learning model to Vertex AI.",
+        "aiplatform.Model.deploy": "Deploys a model to an endpoint.",
+        "aiplatform.Model.delete": "Deletes the model from the cloud.",
+        "aiplatform.Model.export": "Exports a model to a specified location.",
+        "aiplatform.Model.evaluate": "Evaluates the performance of a deployed model."
+    },
+    "Endpoint Operations": {
+        "aiplatform.Endpoint.create": "Creates a new endpoint to deploy models.",
+        "aiplatform.Endpoint.deploy": "Deploys a model to an existing endpoint.",
+        "aiplatform.Endpoint.undeploy": "Undeploys a model from an endpoint.",
+        "aiplatform.Endpoint.delete": "Deletes an endpoint.",
+        "aiplatform.Endpoint.predict": "Makes predictions on the deployed model."
+    },
+    "Dataset Operations": {
+        "aiplatform.Dataset.create": "Creates a dataset in Vertex AI.",
+        "aiplatform.Dataset.import_data": "Imports data into the dataset from Cloud Storage or BigQuery.",
+        "aiplatform.Dataset.delete": "Deletes a dataset.",
+        "aiplatform.ImageDataset.create": "Creates an image dataset.",
+        "aiplatform.TabularDataset.create": "Creates a tabular dataset."
+    },
+    "Training Jobs": {
+        "aiplatform.CustomTrainingJob": "Submits a custom training job.",
+        "aiplatform.CustomTrainingJob.run": "Runs a custom training job.",
+        "aiplatform.CustomJob.create": "Creates a custom training job with specified resources.",
+        "aiplatform.CustomJob.submit": "Submits a custom job for execution."
+    },
+    "AutoML Operations": {
+        "aiplatform.AutoMLTabularTrainingJob": "Trains a tabular dataset with AutoML.",
+        "aiplatform.AutoMLImageTrainingJob": "Trains an image dataset with AutoML.",
+        "aiplatform.AutoMLTextTrainingJob": "Trains a text dataset with AutoML.",
+        "aiplatform.AutoMLVideoTrainingJob": "Trains a video dataset with AutoML."
+    },
+    "Batch Prediction Jobs": {
+        "aiplatform.BatchPredictionJob.create": "Creates a batch prediction job.",
+        "aiplatform.BatchPredictionJob.wait_for_completion": "Waits for a batch prediction job to complete."
+    },
+    "Hyperparameter Tuning Jobs": {
+        "aiplatform.HyperparameterTuningJob.create": "Creates a hyperparameter tuning job.",
+        "aiplatform.HyperparameterTuningJob.wait_for_completion": "Waits for the tuning job to complete."
+    },
+    "Other Utility Operations": {
+        "aiplatform.init": "Initializes the Vertex AI environment and settings.",
+        "aiplatform.get_experiment": "Retrieves an experiment.",
+        "aiplatform.log_metrics": "Logs evaluation metrics in an experiment."
+    }
+}

@@ -1,0 +1,151 @@
+rules:
+  - id: vertexai-pipeline-operations
+    patterns:
+      - pattern-either:
+          - pattern: aiplatform.PipelineJob(...) 
+    message: "Detected Vertex AI pipeline operations"
+    languages: [python]
+    severity: INFO
+
+  - id: vertexai-specific-operations
+    patterns:
+      - pattern-either:
+          - pattern: aiplatform.Model.$FUNC(...)
+          - pattern: aiplatform.Endpoint.$FUNC(...)
+          - pattern: aiplatform.Model(...)       
+       
+    message: "Detected Vertex AI specific operation: $FUNC"
+    languages: [python]
+    severity: INFO
+    metadata:
+      category: "ai-operations"
+      technology:
+        - vertexai
+
+  - id: vertexai-endpoint-operations
+    patterns:
+      - pattern-either:
+          - pattern: $ENDPOINT = aiplatform.Endpoint(...)    
+    message: "Detected Vertex AI endpoint operations"
+    languages: [python]
+    severity: INFO
+
+  - id: vertexai-dataset-operations
+    patterns:
+      - pattern-either:
+          - pattern: aiplatform.Dataset.$FUNC(...)
+          - pattern: aiplatform.ImageDataset.$FUNC(...)
+          - pattern: aiplatform.TabularDataset.$FUNC(...)
+    message: "Detected Vertex AI dataset operations"
+    languages: [python]
+    severity: INFO
+
+  - id: vertexai-training-jobs
+    patterns:
+      - pattern-either:
+          - pattern: aiplatform.CustomTrainingJob(...)   
+          - pattern: aiplatform.CustomJob.create(...)
+          - pattern: aiplatform.CustomJob(...)
+    message: "Detected Vertex AI training jobs"
+    languages: [python]
+    severity: INFO
+
+  - id: vertexai-automl-operations
+    patterns:
+      - pattern-either:
+          - pattern: aiplatform.AutoMLTabularTrainingJob(...)
+          - pattern: aiplatform.AutoMLImageTrainingJob(...)
+          - pattern: aiplatform.AutoMLTextTrainingJob(...)
+          - pattern: aiplatform.AutoMLVideoTrainingJob(...)
+    message: "Detected Vertex AI AutoML operations"
+    languages: [python]
+    severity: INFO
+
+  - id: vertexai-batch-prediction-jobs
+    patterns:
+      - pattern-either:
+          - pattern: aiplatform.BatchPredictionJob.create(...)
+    message: "Detected Vertex AI batch prediction jobs"
+    languages: [python]
+    severity: INFO
+
+  - id: vertexai-hyperparameter-tuning-jobs
+    patterns:
+      - pattern-either:
+          - pattern: aiplatform.HyperparameterTuningJob.create(...)
+    message: "Detected Vertex AI hyperparameter tuning jobs"
+    languages: [python]
+    severity: INFO
+
+  - id: vertexai-utility-operations
+    patterns:
+      - pattern-either:
+          - pattern: aiplatform.init(...)
+          - pattern: aiplatform.get_experiment(...)
+          - pattern: aiplatform.log_metrics(...)
+    message: "Detected Vertex AI utility operations"
+    languages: [python]
+    severity: INFO
+
+  - id: find-serving-container-image-uri
+    patterns:
+      # Capture when 'serving_container_image_uri' is assigned a value
+       - pattern-either:
+          - pattern: |
+              serving_container_image_uri = $VALUE
+          # Capture when 'serving_container_image_uri' is used as a function argument
+          - pattern: |
+              def $FUNC(..., serving_container_image_uri, ...): ...
+          # Capture when 'serving_container_image_uri' is passed as an argument in a function call
+          - pattern: |
+              $FUNC(..., serving_container_image_uri=..., ...)
+    message: "Detected 'serving_container_image_uri' with value $VALUE"
+    severity: INFO
+    languages: [python]
+
+  - id: detect-llm-prompt-usage
+    pattern-either:
+      # Detect specific variable names that are typically used as LLM prompts
+      - pattern: prompt = "..."
+      - pattern: query = "..."
+      - pattern: context = "..."
+      - pattern: instruction = "..."
+      - pattern: user_input = "..."
+      - pattern: system_message = "..."
+      
+      # Detect f-strings, multi-line strings, or simple strings assigned to these variables
+      - pattern: prompt = f"..."
+      - pattern: query = f"..."
+      - pattern: context = f"..."
+      - pattern: instruction = f"..."
+      - pattern: user_input = f"..."
+      - pattern: system_message = f"..."
+      - pattern: prompt = '''...'''
+      - pattern: query = '''...'''
+      - pattern: context = '''...'''
+      - pattern: instruction = '''...'''
+      - pattern: user_input = '''...'''
+      - pattern: system_message = '''...'''
+      
+      # Detect LLM API calls using these variables in OpenAI or Transformers libraries
+      - pattern: openai.Completion.create(prompt=prompt, ...)
+      - pattern: transformer.generate(input_ids=..., prompt=prompt, ...)
+    
+    message: "LLM prompt detected: $X"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: "ai-operations"
+      subcategory: "llm-prompt-detection"
+      technology:
+        - llm
+        - openai
+        - transformers
+    options:
+      autofix: false
+
+  - id: detect-gs-urls
+    pattern-regex: "\"(gs:\/\/.*?)\""
+    message: "Detected Google Cloud Storage URL"
+    languages: [python]
+    severity: INFO
