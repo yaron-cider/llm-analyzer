@@ -3,12 +3,12 @@
 from setuptools import setup
 
 setup(
-    name="LLMAnalyzer",
+    name="PromptProbe",
     version="0.1",
     py_modules=["main"],
     entry_points={
         'console_scripts': [
-            'LLMAnalyzer=main:main',
+            'PromptProbe=main:main',
         ],
     },
 )

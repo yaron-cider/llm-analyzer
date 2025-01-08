@@ -103,49 +103,297 @@ rules:
     severity: INFO
     languages: [python]
 
-  - id: detect-llm-prompt-usage
-    pattern-either:
-      # Detect specific variable names that are typically used as LLM prompts
-      - pattern: prompt = "..."
-      - pattern: query = "..."
-      - pattern: context = "..."
-      - pattern: instruction = "..."
-      - pattern: user_input = "..."
-      - pattern: system_message = "..."
-      
-      # Detect f-strings, multi-line strings, or simple strings assigned to these variables
-      - pattern: prompt = f"..."
-      - pattern: query = f"..."
-      - pattern: context = f"..."
-      - pattern: instruction = f"..."
-      - pattern: user_input = f"..."
-      - pattern: system_message = f"..."
-      - pattern: prompt = '''...'''
-      - pattern: query = '''...'''
-      - pattern: context = '''...'''
-      - pattern: instruction = '''...'''
-      - pattern: user_input = '''...'''
-      - pattern: system_message = '''...'''
-      
-      # Detect LLM API calls using these variables in OpenAI or Transformers libraries
-      - pattern: openai.Completion.create(prompt=prompt, ...)
-      - pattern: transformer.generate(input_ids=..., prompt=prompt, ...)
+  - id: prompts-extraction-from-variables
+    languages:
+      - python
+    severity: ERROR
+    message: "LLM prompt detected (1): $X"
+    patterns:
+      - pattern: $VAR = $X
+      - metavariable-pattern:
+          metavariable: $VAR
+          pattern-regex: (?i)(SYSTEM_PROMPT)|(USER_PROMPT|PROMPT|USER_INPUT|INSTRUCTIONS)
     
-    message: "LLM prompt detected: $X"
-    languages: [python]
-    severity: WARNING
-    metadata:
-      category: "ai-operations"
-      subcategory: "llm-prompt-detection"
-      technology:
-        - llm
-        - openai
-        - transformers
-    options:
-      autofix: false
 
   - id: detect-gs-urls
     pattern-regex: "\"(gs:\/\/.*?)\""
     message: "Detected Google Cloud Storage URL"
     languages: [python]
     severity: INFO
+
+  - id: extract--model-name-detailed
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $CLIENT.chat.completions.create(
+                model=$MODEL,
+                ...
+              )
+          - pattern: |
+              $CLIENT.completions.create(
+                model=$MODEL,
+                ...
+              )
+          - pattern: |
+              openai.ChatCompletion.create(
+                model=$MODEL,
+                ...
+              )
+          - pattern: |
+              openai.Completion.create(
+                model=$MODEL,
+                ...
+              )
+      - metavariable-pattern:
+          metavariable: $MODEL
+          pattern-regex: '"([^"]+)"'
+    message: "OpenAI model name used: $MODEL"
+    languages: [python]
+    severity: INFO
+
+  - id: detect-gemini-model-init
+    pattern-either:
+      # Direct initialization
+      - pattern: |
+          $MODEL = genai.GenerativeModel($NAME)
+      - pattern: |
+          $MODEL = google.generativeai.GenerativeModel($NAME)
+      # With configuration
+      - pattern: |
+          genai.configure(...)
+          ...
+          $MODEL = genai.GenerativeModel($NAME)
+      # Alternative import style
+      - pattern: |
+          from google.generativeai import GenerativeModel
+          $MODEL = GenerativeModel($NAME)
+    message: "Gemini model initialization detected"
+    languages: [python]
+    severity: INFO
+
+  # Specific rule to extract model name
+  - id: extract-gemini-model-name
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $MODEL = genai.GenerativeModel($NAME)
+          - pattern: |
+              $MODEL = google.generativeai.GenerativeModel($NAME)
+          - pattern: |
+              $MODEL = GenerativeModel($NAME)
+      - metavariable-pattern:
+          metavariable: $NAME
+          pattern-regex: "'([^']+)'"
+    message: "Gemini model name used: $NAME"
+    languages: [python]
+    severity: INFO
+
+  # Detect model name in variable assignments
+  - id: detect-gemini-model-variable
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $MODEL_NAME = 'gemini-...'
+          - pattern: |
+              model_name = 'gemini-...'
+          - pattern: |
+              generation_config = {"model": 'gemini-...'}
+    message: "Gemini model name assigned to variable"
+    languages: [python]
+    severity: INFO
+
+  # Detect config dictionary usage
+  - id: detect-gemini-config
+    pattern: |
+        $CONFIG = {
+            "model": $MODEL,
+            ...
+        }
+    message: "Gemini model configuration detected: $MODEL"
+    languages: [python]
+    severity: INFO
+
+  # Detect model usage in functions
+  - id: detect-gemini-function-usage
+    patterns:
+      - pattern-either:
+          - pattern: |
+              def $FUNC(..., model='gemini-...', ...):
+                  ...
+          - pattern: |
+              def $FUNC(..., model_name='gemini-...', ...):
+                  ...
+          - pattern: |
+              async def $FUNC(..., model='gemini-...', ...):
+                  ...
+    message: "Gemini model name in function parameters"
+    languages: [python]
+    severity: INFO
+
+   # Specific rule to extract model name
+  - id: extract-ollama-model-name
+    patterns:
+      - pattern-either:
+          # Client generation methods
+          - pattern: |
+              $CLIENT.generate(model=$MODEL, ...)
+          - pattern: |
+              $CLIENT.chat(model=$MODEL, ...)
+          
+          # Direct Ollama function calls
+          - pattern: |
+              ollama.generate(model=$MODEL, ...)
+          - pattern: |
+              ollama.chat(model=$MODEL, ...)
+          
+          # Model initializations
+          - pattern: |
+              $MODEL_VAR = "$MODEL_NAME"
+              $CLIENT.generate(model=$MODEL_VAR, ...)
+      
+      # Capture model names in quotes
+      - metavariable-pattern:
+          metavariable: $MODEL
+          pattern-regex: '"([^"]+)"'
+    message: "Ollama model name detected: $MODEL"
+    languages: [python]
+    severity: INFO 
+
+  # Expanded model name extraction
+  - id: extract-ollama-model-name-comprehensive
+    patterns:
+      - pattern-either:
+          # Direct function calls
+          - pattern: |
+              $RESPONSE = chat(model=$MODEL, ...)
+          - pattern: |
+              $RESPONSE = generate(model=$MODEL, ...)
+          - pattern: |
+              $RESPONSE: ChatResponse = chat(model=$MODEL, ...)
+      
+      # Capture model names in quotes
+      - metavariable-pattern:
+          metavariable: $MODEL
+          pattern-regex: "'([^']+)'"
+    message: "Ollama model name detected: $MODEL"
+    languages: [python]
+    severity: INFO
+
+     # Python Anthropic API Rules
+  - id: python-anthropic-model-direct
+    patterns:
+      - pattern-either:
+        - pattern: anthropic.Anthropic(model=$MODEL, ...)
+        - pattern: anthropic.Client(model=$MODEL, ...)
+        - pattern: anthropic.Client(...).messages.create(model=$MODEL, ...)
+        - pattern: client.messages.create(model=$MODEL, ...)
+        - pattern: messages.create(model=$MODEL, ...)
+    message: "Anthropic model: $MODEL"
+    languages: [python]
+    severity: INFO
+
+  - id: openai-completion-prompt
+    pattern: |
+        openai.Completion.create(prompt=$PROMPT, ...)
+    message: "Detected OpenAI Completion prompt"
+    languages: [python]
+    severity: INFO
+
+  - id: openai-chat-messages
+    patterns:
+      - pattern-either:
+          - pattern: |
+              openai.ChatCompletion.create(
+                messages=$MESSAGES,
+                ...
+              )
+          - pattern: |
+              $CLIENT.chat.completions.create(
+                messages=$MESSAGES,
+                ...
+              )
+    message: "Detected OpenAI chat messages: $MESSAGES"
+    languages: [python]
+    severity: INFO
+
+  - id: anthropic-claude-prompt
+    pattern: |
+      anthropic.Completion.create(prompt=$PROMPT, ...)
+    message: "Detected Anthropic Claude prompt"
+    languages: [python]
+    severity: INFO
+
+  - id: langchain-prompt
+    pattern: |
+      PromptTemplate(template=$PROMPT, ...)
+    message: "Detected LangChain PromptTemplate"
+    languages: [python]
+    severity: INFO
+  
+  #- id: direct-llm-string-prompt
+  #  pattern-either:
+  #    - pattern: |
+  #        $FUNC(f"... {$PROMPT} ...")
+  #    - pattern: |
+  #        $FUNC(f'... {$PROMPT} ...')
+  #    - pattern: |
+  #        $FUNC("..." + $PROMPT + "...")
+  #    - pattern: |
+  #        $FUNC(str($PROMPT))
+  #  message: "Potential LLM prompt detected via string concatenation or f-string: $PROMPT"
+  #  languages: [python]
+  #  severity: INFO
+  
+  - id: generic-ai-prompt
+    pattern-regex: |
+      (generate|create|produce).*(?:prompt|text|response)
+    message: "Potential AI prompt generation method detected"
+    languages: [python]
+    severity: INFO
+
+  - id: ai-model-call-with-input
+    pattern-either:
+      - pattern: |
+          $MODEL.generate($PROMPT)
+      - pattern: |
+          $MODEL.predict($PROMPT)
+      - pattern: |
+          $MODEL.complete($PROMPT)
+    message: "Potential LLM model call with input"
+    languages: [python]
+    severity: INFO
+
+  - id: prompt-injection-openai
+    mode: taint
+    languages:
+      - python
+    message:  Potential prompt injection detected. User-controlled input is flowing directly without sanitization to OpenAI API.
+    severity: WARNING
+    pattern-sources:
+      - pattern: request.form.get(...)
+      - pattern: request.$W.get(...)
+      - pattern: request.$W[...]
+    pattern-sinks:
+      - pattern: openai.ChatCompletion.create(...)
+      - pattern: openai.Completion.create(...)
+
+  - id: extract--model-name-detailed-track-variable       
+    languages:
+      - python
+    severity: WARNING
+    message: |
+      "OpenAI model: $MODEL"
+    pattern-sources:
+      - patterns:
+        - focus-metavariable: "$MODEL"
+        - pattern-either:
+          - pattern: $MODEL = "$X"                    
+          - pattern: |
+              def $FUNC(...,$MODEL="$X",...):
+                ...
+    pattern-sinks:
+      - pattern: $CLIENT.chat.completions.create(model=$MODEL,...)
+      - pattern: $CLIENT.completions.create(model=$MODEL,...)
+      - pattern: openai.ChatCompletion.create(model=$MODEL,...)
+      - pattern: openai.Completion.create(model=$MODEL,...)
+    mode: taint
